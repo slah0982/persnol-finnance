@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FaPlus, FaTimes } from 'react-icons/fa';
 import {
   addTransaction,
+  updateTransaction,
   getAllTransactions,
   deleteTransaction,
   getBalance,
@@ -24,6 +25,7 @@ export default function App() {
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
   const [showForm, setShowForm] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
   const [showCategories, setShowCategories] = useState(false);
 
   const refreshAll = useCallback(async () => {
@@ -47,9 +49,24 @@ export default function App() {
     })();
   }, [refreshAll]);
 
-  const handleAddTransaction = async (data) => {
-    await addTransaction(data);
+  const handleSubmitTransaction = async (data) => {
+    if (editingTransaction) {
+      await updateTransaction(editingTransaction.id, data);
+    } else {
+      await addTransaction(data);
+    }
+    setEditingTransaction(null);
+    setShowForm(false);
     await refreshAll();
+  };
+
+  const handleEditTransaction = (transaction) => {
+    setEditingTransaction(transaction);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTransaction(null);
     setShowForm(false);
   };
 
@@ -86,7 +103,12 @@ export default function App() {
               <FaTimes />
             </button>
           </div>
-          <TransactionForm onAdd={handleAddTransaction} categories={categories} />
+          <TransactionForm
+            onSubmit={handleSubmitTransaction}
+            categories={categories}
+            editTransaction={editingTransaction}
+            onCancel={handleCancelEdit}
+          />
         </section>
 
         <section className="list-section">
@@ -97,6 +119,7 @@ export default function App() {
             transactions={transactions}
             categories={categories}
             onDelete={handleDeleteTransaction}
+            onEdit={handleEditTransaction}
           />
         </section>
       </div>
@@ -106,21 +129,26 @@ export default function App() {
         onImport={refreshAll}
       />
 
-      <button className="fab" onClick={() => setShowForm(true)} title="إضافة معاملة">
+      <button className="fab" onClick={() => { setEditingTransaction(null); setShowForm(true); }} title="إضافة معاملة">
         <FaPlus />
       </button>
 
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+        <div className="modal-overlay" onClick={handleCancelEdit}>
           <div className="modal-content modal-form" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>إضافة معاملة</h3>
-              <button className="modal-close" onClick={() => setShowForm(false)}>
+              <h3>{editingTransaction ? 'تعديل معاملة' : 'إضافة معاملة'}</h3>
+              <button className="modal-close" onClick={handleCancelEdit}>
                 <FaTimes />
               </button>
             </div>
             <div className="modal-body">
-              <TransactionForm onAdd={handleAddTransaction} categories={categories} />
+              <TransactionForm
+                onSubmit={handleSubmitTransaction}
+                categories={categories}
+                editTransaction={editingTransaction}
+                onCancel={handleCancelEdit}
+              />
             </div>
           </div>
         </div>

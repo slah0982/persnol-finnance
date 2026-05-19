@@ -2,13 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { FaMoneyBillWave, FaShoppingCart, FaTags } from 'react-icons/fa';
 import { todayStr, getAllCategories } from '../db';
 
-export default function TransactionForm({ onAdd, categories }) {
+export default function TransactionForm({ onSubmit, categories, editTransaction, onCancel }) {
   const [type, setType] = useState('income');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [date, setDate] = useState(todayStr());
   const [note, setNote] = useState('');
   const [tagsInput, setTagsInput] = useState('');
+
+  const isEditing = !!editTransaction;
+
+  useEffect(() => {
+    if (editTransaction) {
+      setType(editTransaction.type);
+      setAmount(String(editTransaction.amount));
+      setCategory(editTransaction.category);
+      setDate(editTransaction.date);
+      setNote(editTransaction.note || '');
+      setTagsInput((editTransaction.tags || []).join(', '));
+    } else {
+      setType('income');
+      setAmount('');
+      setCategory('');
+      setDate(todayStr());
+      setNote('');
+      setTagsInput('');
+    }
+  }, [editTransaction]);
 
   const filtered = categories.filter((c) => c.type === type);
 
@@ -26,12 +46,7 @@ export default function TransactionForm({ onAdd, categories }) {
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean);
-    onAdd({ type, amount: num, category, date, note: note.trim(), tags });
-    setAmount('');
-    setNote('');
-    setTagsInput('');
-    setType('income');
-    setDate(todayStr());
+    onSubmit({ type, amount: num, category, date, note: note.trim(), tags });
   };
 
   return (
@@ -104,9 +119,16 @@ export default function TransactionForm({ onAdd, categories }) {
           onChange={(e) => setNote(e.target.value)}
         />
       </div>
-      <button type="submit" className="btn-primary">
-        إضافة
-      </button>
+      <div className="form-actions">
+        <button type="submit" className="btn-primary">
+          {isEditing ? 'تحديث' : 'إضافة'}
+        </button>
+        {isEditing && onCancel && (
+          <button type="button" className="btn-cancel" onClick={onCancel}>
+            إلغاء
+          </button>
+        )}
+      </div>
     </form>
   );
 }

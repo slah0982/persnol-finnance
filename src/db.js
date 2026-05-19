@@ -85,6 +85,13 @@ export async function getAllTransactions() {
   return doRequest('transactions', 'readonly', (store) => store.getAll());
 }
 
+export async function updateTransaction(id, data) {
+  return doRequest('transactions', 'readwrite', (store) => {
+    const record = { ...data, id };
+    return store.put(record);
+  });
+}
+
 export async function deleteTransaction(id) {
   return doRequest('transactions', 'readwrite', (store) => store.delete(id));
 }

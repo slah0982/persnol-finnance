@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { FaTrash, FaFilter, FaUndo, FaSearch, FaTags, FaLayerGroup } from 'react-icons/fa';
+import { FaTrash, FaPen, FaFilter, FaUndo, FaSearch, FaTags } from 'react-icons/fa';
 import { formatCurrency, formatDate } from '../db';
 
-export default function TransactionList({ transactions, categories, onDelete }) {
+export default function TransactionList({ transactions, categories, onDelete, onEdit }) {
   const [filterType, setFilterType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterTag, setFilterTag] = useState('all');
@@ -156,6 +156,13 @@ export default function TransactionList({ transactions, categories, onDelete }) 
                   {t.type === 'income' ? '+' : '-'}
                   {formatCurrency(t.amount)}
                 </span>
+                <button
+                  className="edit-btn"
+                  onClick={() => onEdit(t)}
+                  title="تعديل"
+                >
+                  <FaPen />
+                </button>
                 <button
                   className="delete-btn"
                   onClick={() => onDelete(t.id)}
