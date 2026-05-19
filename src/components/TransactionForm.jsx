@@ -33,10 +33,11 @@ export default function TransactionForm({ onSubmit, categories, editTransaction,
   const filtered = categories.filter((c) => c.type === type);
 
   useEffect(() => {
+    if (editTransaction) return;
     if (filtered.length > 0 && !filtered.find((c) => c.name === category)) {
       setCategory(filtered[0].name);
     }
-  }, [type, categories]);
+  }, [type, categories, editTransaction]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
