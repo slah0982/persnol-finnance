@@ -8,12 +8,15 @@ const isDev = process.env.VITE_DEV_SERVER_URL;
 let mainWindow;
 
 function createWindow() {
+  const iconPath = path.join(__dirname, '..', 'public', 'icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 750,
     minWidth: 400,
     minHeight: 600,
     title: 'مدير مالي شخصي',
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
