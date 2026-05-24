@@ -16,6 +16,7 @@ import SummaryCards from './components/SummaryCards';
 import TransactionForm from './components/TransactionForm';
 import TransactionList from './components/TransactionList';
 import CategoryManager from './components/CategoryManager';
+import Wishlist from './components/Wishlist';
 import Settings from './components/Settings';
 
 export default function App() {
@@ -123,6 +124,8 @@ export default function App() {
           />
         </section>
       </div>
+
+      <Wishlist refreshTrigger={transactions.length} />
 
       <Settings
         onManageCategories={() => setShowCategories(true)}

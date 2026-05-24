@@ -1,45 +1,60 @@
 const DB_NAME = 'PersonalFinanceDB';
-const DB_VERSION = 2;
+const DB_VERSION = 4;
 
 let db = null;
+let openPromise = null;
 
 function openDB() {
-  return new Promise((resolve, reject) => {
-    if (db) return resolve(db);
+  if (db) {
+    if (db.version === DB_VERSION) return Promise.resolve(db);
+    db.close();
+    db = null;
+  }
+  if (openPromise) return openPromise;
 
+  openPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = (event) => {
       const database = event.target.result;
-
       if (!database.objectStoreNames.contains('transactions')) {
         const store = database.createObjectStore('transactions', {
-          keyPath: 'id',
-          autoIncrement: true,
+          keyPath: 'id', autoIncrement: true,
         });
         store.createIndex('date', 'date', { unique: false });
         store.createIndex('type', 'type', { unique: false });
         store.createIndex('category', 'category', { unique: false });
       }
-
       if (!database.objectStoreNames.contains('categories')) {
         const store = database.createObjectStore('categories', {
-          keyPath: 'id',
-          autoIncrement: true,
+          keyPath: 'id', autoIncrement: true,
         });
         store.createIndex('type', 'type', { unique: false });
+      }
+      if (!database.objectStoreNames.contains('wishlist')) {
+        database.createObjectStore('wishlist', {
+          keyPath: 'id', autoIncrement: true,
+        });
       }
     };
 
     request.onsuccess = (event) => {
       db = event.target.result;
+      openPromise = null;
       resolve(db);
     };
 
     request.onerror = (event) => {
+      openPromise = null;
       reject(event.target.error);
     };
+
+    request.onblocked = () => {
+      openPromise = null;
+      reject(new Error('قاعدة البيانات محجوبة من علامة تبويب أخرى'));
+    };
   });
+  return openPromise;
 }
 
 function doRequest(storeName, mode, callback) {
@@ -140,24 +155,52 @@ export async function deleteCategory(id) {
   return doRequest('categories', 'readwrite', (store) => store.delete(id));
 }
 
+// ── Wishlist ──
+
+export async function addWishlistItem(item) {
+  return doRequest('wishlist', 'readwrite', (store) =>
+    store.add({ ...item, createdAt: new Date().toISOString() })
+  );
+}
+
+export async function getAllWishlistItems() {
+  return doRequest('wishlist', 'readonly', (store) => store.getAll());
+}
+
+export async function deleteWishlistItem(id) {
+  return doRequest('wishlist', 'readwrite', (store) => store.delete(id));
+}
+
 // ── Export / Import ──
 
 export async function exportAllData() {
-  const [transactions, categories] = await Promise.all([
+  const [transactions, categories, wishlist] = await Promise.all([
     getAllTransactions(),
     getAllCategories(),
+    getAllWishlistItems(),
   ]);
   return {
     transactions,
     categories,
+    wishlist,
     exportedAt: new Date().toISOString(),
-    version: 1,
+    version: 2,
+  };
+}
+
+function normalizeItem(item) {
+  const tagsVal = item.tags ?? [];
+  return {
+    ...item,
+    amount: typeof item.amount === 'string' ? (parseFloat(item.amount.replace(/\./g, '').replace(',', '.')) || 0) : item.amount,
+    id: typeof item.id === 'string' ? parseInt(item.id, 10) || item.id : item.id,
+    tags: Array.isArray(tagsVal) ? tagsVal : (typeof tagsVal === 'string' && tagsVal ? tagsVal.split(',').map((t) => t.trim()).filter(Boolean) : []),
   };
 }
 
 export async function importAllData(data) {
   const database = await openDB();
-  const tx = database.transaction(['transactions', 'categories'], 'readwrite');
+  const tx = database.transaction(['transactions', 'categories', 'wishlist'], 'readwrite');
 
   await new Promise((resolve, reject) => {
     const req = tx.objectStore('transactions').clear();
@@ -167,7 +210,7 @@ export async function importAllData(data) {
 
   for (const item of data.transactions || []) {
     await new Promise((resolve, reject) => {
-      const req = tx.objectStore('transactions').put(item);
+      const req = tx.objectStore('transactions').put(normalizeItem(item));
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });
@@ -182,6 +225,20 @@ export async function importAllData(data) {
   for (const item of data.categories || []) {
     await new Promise((resolve, reject) => {
       const req = tx.objectStore('categories').put(item);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  await new Promise((resolve, reject) => {
+    const req = tx.objectStore('wishlist').clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+
+  for (const item of data.wishlist || []) {
+    await new Promise((resolve, reject) => {
+      const req = tx.objectStore('wishlist').put(item);
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
     });

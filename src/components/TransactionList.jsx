@@ -93,7 +93,7 @@ export default function TransactionList({ transactions, categories, onDelete, on
           </select>
           {allTags.length > 0 && (
             <select value={filterTag} onChange={(e) => setFilterTag(e.target.value)}>
-              <option value="all"><FaTags /> الوسم: الكل</option>
+              <option value="all">الوسم: الكل</option>
               {allTags.map((tag) => (
                 <option key={tag} value={tag}>{tag}</option>
               ))}
@@ -141,14 +141,18 @@ export default function TransactionList({ transactions, categories, onDelete, on
               <div className="transaction-info">
                 <span className="transaction-category">{t.category}</span>
                 {t.note && <span className="transaction-note">{t.note}</span>}
-                {t.tags && t.tags.length > 0 && (
-                  <span className="transaction-tags">
-                    <FaTags className="tag-icon" />
-                    {t.tags.map((tag) => (
-                      <span className="tag-chip" key={tag}>{tag}</span>
-                    ))}
-                  </span>
-                )}
+                {(() => {
+                  const tags = Array.isArray(t.tags) ? t.tags : [];
+                  if (tags.length === 0) return null;
+                  return (
+                    <span className="transaction-tags">
+                      <FaTags className="tag-icon" />
+                      {tags.map((tag) => (
+                        <span className="tag-chip" key={tag}>{tag}</span>
+                      ))}
+                    </span>
+                  );
+                })()}
                 <span className="transaction-date">{formatDate(t.date)}</span>
               </div>
               <div className="transaction-amount">
