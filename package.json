@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.personalfinance.app",
-    "productName": "مدير مالي",
+    "productName": "Personal Finance",
     "directories": {
       "output": "release"
     },
@@ -38,11 +38,12 @@
       "icon": "public/icon.png"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "language": "Arabic"
-    }
+                 "oneClick": false,
+                 "allowToChangeInstallationDirectory": true,
+                 "createDesktopShortcut": true,
+                 "language": "1033",
+                 "unicode": true
+             }
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

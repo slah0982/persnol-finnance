@@ -181,6 +181,29 @@ export default function Settings({ onManageCategories, onImport }) {
         return val;
       }
 
+      function serialToDateStr(serial) {
+        const epoch = new Date(1899, 11, 30);
+        const d = new Date(epoch.getTime() + serial * 86400000);
+        return d.toISOString().split('T')[0];
+      }
+
+      function parseDateStr(val) {
+        if (typeof val === 'number') return serialToDateStr(val);
+        if (typeof val === 'string') {
+          const trimmed = val.trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+          const d = new Date(trimmed);
+          if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+          const parts = trimmed.split(/[/\-.]/);
+          if (parts.length === 3) {
+            const [a, b, c] = parts.map(Number);
+            if (a > 31) return `${a}-${String(b).padStart(2, '0')}-${String(c).padStart(2, '0')}`;
+            if (c > 31) return `${c}-${String(b).padStart(2, '0')}-${String(a).padStart(2, '0')}`;
+          }
+        }
+        return val;
+      }
+
       function toObjects(data) {
         if (!data || !data.values || data.values.length < 2) return [];
         const headers = data.values[0];
@@ -192,6 +215,8 @@ export default function Settings({ onManageCategories, onImport }) {
               val = val.split(',').map((t) => t.trim()).filter(Boolean);
             } else if (h === 'amount' || h === 'id') {
               val = parseNum(val);
+            } else if (h === 'date') {
+              val = parseDateStr(val);
             }
             obj[h] = val;
           });
